@@ -140,11 +140,8 @@ if curr_user_id == "master":
                         del st.session_state["user_db"][p_id]
                         st.info(f"{p_info['name']}님 거절 완료.")
                         st.rerun()
-    st.sidebar.markdown("---")
 
-st.sidebar.header("⚙️ 시스템 설정")
-default_key = st.secrets.get("GEMINI_API_KEY", "")
-api_key = st.sidebar.text_input("Gemini API Key를 입력하세요", value=default_key, type="password")
+api_key = st.secrets.get("GEMINI_API_KEY", "")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 작성자 정보")
