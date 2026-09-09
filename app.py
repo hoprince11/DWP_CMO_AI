@@ -4,6 +4,18 @@ from datetime import datetime
 from google import genai
 
 st.set_page_config(page_title="동화약품 수탁 AI 자동화 시스템", layout="wide")
+# ------------------------------------------
+# 🎨 [UI] 상단 헤더 및 툴바 메뉴 숨기기
+# ------------------------------------------
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stAppHeader {display: none;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ==========================================
 # 🔒 [보안 & 사용자 관리] 세션 DB 초기화
