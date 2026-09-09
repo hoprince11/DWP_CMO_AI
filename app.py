@@ -143,7 +143,8 @@ if curr_user_id == "master":
     st.sidebar.markdown("---")
 
 st.sidebar.header("⚙️ 시스템 설정")
-api_key = st.sidebar.text_input("Gemini API Key를 입력하세요", type="password")
+default_key = st.secrets.get("GEMINI_API_KEY", "")
+api_key = st.sidebar.text_input("Gemini API Key를 입력하세요", value=default_key, type="password")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 작성자 정보")
