@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from google import genai
 
-st.set_page_config(page_title="동화약품 수탁 AI 자동화 시스템", layout="wide")
+st.set_page_config(page_title="동화약품 수탁팀 AI 자동화 시스템", layout="wide")
 # ------------------------------------------
 # 🎨 [UI] 상단 헤더 및 툴바 메뉴 숨기기
 # ------------------------------------------
