@@ -111,6 +111,8 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
+    # 💡 로그인 전에도 사이드바 버튼이 활성화되도록 사이드바에 안내 문구 표시
+    st.sidebar.info("🔒 로그인 후 시스템 이용이 가능합니다.")
     auth_screen()
     st.stop()
 
