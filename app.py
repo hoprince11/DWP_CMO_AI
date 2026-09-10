@@ -11,40 +11,47 @@ st.set_page_config(
 )
 
 # ------------------------------------------
-# 🎨 [UI] 사이드바 토글 버튼 완벽 보존 + 우측 툴바/Manage app 숨김
+# 🎨 [UI] 사이드바 토글 버튼 강제 노출 (강력 보강 버전)
 # ------------------------------------------
 hide_streamlit_style = """
     <style>
-    /* 1. 사이드바 열기/닫기 토글 버튼 무조건 강제 표시 */
+    /* 1. 상단 헤더 컨테이너 레이어 및 마우스 클릭 허용 */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+        z-index: 999990 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* 2. 사이드바 열기/닫기 토글 버튼 최상단 강제 표시 */
     [data-testid="stSidebarCollapseButton"],
-    button[data-testid="baseButton-headerNoPadding"],
+    [data-testid="stSidebarExpandButton"],
     button[aria-label="Toggle sidebar"],
-    div[data-testid="stSidebarNavSeparator"] {
+    button[aria-label="Close sidebar"],
+    button[data-testid="baseButton-headerNoPadding"] {
         display: flex !important;
         visibility: visible !important;
         opacity: 1 !important;
+        pointer-events: auto !important;
         z-index: 999999 !important;
+        position: relative !important;
     }
 
-    /* 2. 우측 상단 액션 버튼 그룹 (Share, Edit, GitHub 등)만 가리기 */
+    /* 3. 우측 상단 툴바 항목(Share, GitHub, Edit 등)만 타겟팅하여 제거 */
     [data-testid="stHeaderActionElements"],
-    .stAppHeader > div:last-child {
+    [data-testid="stToolbar"] > div:not(:first-child) {
         display: none !important;
         visibility: hidden !important;
     }
     
-    /* 3. 우측 하단 Manage app 버튼 숨김 */
+    /* 4. 우측 하단 Manage app 버튼 및 푸터/배지 숨김 */
     div[data-testid="stStatusWidget"],
     button[title="Manage app"],
-    .stAppViewBlockContainer + div {
+    #MainMenu,
+    footer,
+    div[data-testid="stViewerBadge"] {
         display: none !important;
         visibility: hidden !important;
     }
-
-    /* 4. 푸터 및 배지 숨김 */
-    #MainMenu {visibility: hidden;}
-    footer {display: none !important;}
-    div[data-testid="stViewerBadge"] {display: none !important;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -137,7 +144,6 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
-    # 로그인 전 안내
     st.sidebar.info("🔒 로그인 후 시스템 이용이 가능합니다.")
     auth_screen()
     st.stop()
