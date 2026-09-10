@@ -204,7 +204,7 @@ if tab1:
 
     c1, c2, c3 = st.columns([2, 1, 1])
     with c1:
-        # 수정 1 & 2: '제품명'으로 단순화 + 초기값 빈값 설정 (placeholder 추가)
+        # 제품명 수정 및 초기값 빈값 설정
         item_name = st.text_input(
             "제품명", 
             value="", 
@@ -219,13 +219,13 @@ if tab1:
 
     c4, c5, c6 = st.columns([2, 1, 1])
     with c4:
-        # 수정 3: format="%,d" 적용으로 입력창 내부 1,000,000 콤마 표기
+        # 에러 수정: Streamlit number_input에서 지원하는 C-style 포맷 "%d" 적용
         batch_size_num = st.number_input(
             f"기준 배치 사이즈 (Batch Size, {unit_kor})", 
             min_value=0, 
             value=1000000, 
             step=10000, 
-            format="%,d"
+            format="%d"
         )
         st.caption(f"💡 현재 배치 사이즈: **{batch_size_num:,}** {unit_kor}")
     with c5:
