@@ -459,9 +459,9 @@ if tab1:
 
             with st.spinner("AI가 최적의 인상 전략 옵션 3가지를 도출 중입니다..."):
                 try:
-                    # 🔧 최신 정식 모델 'gemini-2.0-flash' 적용
+                    # 🔧 최신 정식 모델 'gemini-3.6-flash' 적용
                     response = client.models.generate_content(
-                        model='gemini-2.0-flash',
+                        model='gemini-3.6-flash',
                         contents=prompt_options,
                     )
                     st.session_state['ai_options_text'] = response.text
@@ -570,9 +570,9 @@ if tab1:
 
             with st.spinner("선택하신 옵션으로 거래처 제출용 메일 제안서를 작성 중입니다..."):
                 try:
-                    # 🔧 최신 정식 모델 'gemini-2.0-flash' 적용
+                    # 🔧 최신 정식 모델 'gemini-3.6-flash' 적용
                     response_email = client.models.generate_content(
-                        model='gemini-2.0-flash',
+                        model='gemini-3.6-flash',
                         contents=prompt_email,
                     )
                     st.markdown("---")
