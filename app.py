@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from google import genai
 
-# 페이지 설정 (사이드바 기본 펼침)
+# 페이지 설정
 st.set_page_config(
     page_title="동화약품 수탁팀 AI 자동화 시스템", 
     layout="wide",
@@ -11,76 +11,34 @@ st.set_page_config(
 )
 
 # ------------------------------------------
-# 🎨 [UI] 헤더 영역 파괴 없이 토글 버튼 완벽 유지 + 우측 요소만 정밀 제거
+# 🎨 [UI] 토글 버튼 보존 및 우측 요소 정밀 제거
 # ------------------------------------------
-hide_streamlit_style = """
+st.markdown("""
     <style>
-    /* 1. 상단 헤더 전체 레이어 유지 (사이드바 버튼 클릭 가능하도록 설정) */
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-        z-index: 99990 !important;
-    }
-
-    /* 2. 사이드바 열기/닫기 버튼 강제 보존 */
-    [data-testid="stSidebarCollapseButton"],
-    [data-testid="stSidebarExpandButton"],
-    button[aria-label="Toggle sidebar"],
-    button[aria-label="Close sidebar"],
-    button[data-testid="baseButton-headerNoPadding"] {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        z-index: 99999 !important;
-    }
-
-    /* 3. 우측 상단 아이콘/버튼들만 선택적으로 정밀 숨김 (토글 버튼 영향 X) */
-    [data-testid="stHeaderActionElements"],
-    [data-testid="stToolbarActions"],
-    button[title="View app in GitHub"],
-    button[title="Share this app"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-
-    /* 4. 우측 하단 Manage app 버튼 및 푸터 숨김 */
-    div[data-testid="stStatusWidget"],
-    button[title="Manage app"],
-    #MainMenu,
-    footer,
-    div[data-testid="stViewerBadge"] {
-        display: none !important;
-        visibility: hidden !important;
+    header[data-testid="stHeader"] { background-color: transparent !important; z-index: 99990 !important; }
+    [data-testid*="stSidebar"], button[aria-label*="sidebar"] { display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 99999 !important; }
+    [data-testid="stHeaderActionElements"], [data-testid="stToolbarActions"], button[title="View app in GitHub"], button[title="Share this app"],
+    div[data-testid="stStatusWidget"], button[title="Manage app"], #MainMenu, footer, div[data-testid="stViewerBadge"] {
+        display: none !important; visibility: hidden !important;
     }
     </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ==========================================
 # 🔒 [보안 & 사용자 관리] 세션 DB 초기화
 # ==========================================
 if "user_db" not in st.session_state:
     st.session_state["user_db"] = {
-        # 관리자 계정 (승인 완료 상태)
-        "master": {
-            "pw": "3019",
-            "name": "최고관리자",
-            "position": "관리자",
-            "approved": True,
-            "created_at": "2026-01-01 00:00:00"
-        },
-        # 기존 기본 계정 (승인 완료 상태)
-        "dh_teamleader": {
-            "pw": "dongwha2026!",
-            "name": "홍길동",
-            "position": "팀장",
-            "approved": True,
-            "created_at": "2026-01-01 00:00:00"
-        }
+        "master": {"pw": "3019", "name": "최고관리자", "position": "관리자", "approved": True, "created_at": "2026-01-01 00:00:00"},
+        "dh_teamleader": {"pw": "dongwha2026!", "name": "홍길동", "position": "팀장", "approved": True, "created_at": "2026-01-01 00:00:00"}
     }
+
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
 
 def auth_screen():
     st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
+    _, col2, _ = st.columns([1, 2, 1])
     
     with col2:
         st.title("🔒 동화약품 수탁팀 AI 자동화 시스템")
@@ -89,67 +47,55 @@ def auth_screen():
         
         tab_login, tab_signup = st.tabs(["🔑 로그인", "📝 회원가입"])
         
-        # --- [1. 로그인 탭] ---
         with tab_login:
             with st.form("login_form"):
                 user_id = st.text_input("사번 (ID)", key="login_id")
                 user_pw = st.text_input("비밀번호 (Password)", type="password", key="login_pw")
-                submit = st.form_submit_button("로그인", type="primary")
-                
-                if submit:
+                if st.form_submit_button("로그인", type="primary"):
                     user_info = st.session_state["user_db"].get(user_id)
                     if user_info and user_info["pw"] == user_pw:
                         if not user_info.get("approved", False):
-                            st.warning("⏳ 관리자 승인 대기 중인 계정입니다. 관리자 승인 후 로그인해 주세요.")
+                            st.warning("⏳ 관리자 승인 대기 중인 계정입니다.")
                         else:
-                            st.session_state["authenticated"] = True
-                            st.session_state["user_id"] = user_id
-                            st.session_state["user_name"] = user_info.get("name", "")
-                            st.session_state["user_position"] = user_info.get("position", "")
-                            st.success("로그인에 성공하였습니다!")
+                            st.session_state.update({
+                                "authenticated": True, "user_id": user_id,
+                                "user_name": user_info.get("name", ""),
+                                "user_position": user_info.get("position", "")
+                            })
+                            st.success("로그인 성공!")
                             st.rerun()
                     else:
                         st.error("❌ 사번(ID) 또는 비밀번호가 올바르지 않습니다.")
-        
-        # --- [2. 회원가입 탭] ---
+
         with tab_signup:
             with st.form("signup_form"):
                 new_id = st.text_input("사번 (ID)", key="signup_id", placeholder="예: 20260101")
                 new_name = st.text_input("이름", key="signup_name", placeholder="예: 홍길동")
-                new_position = st.text_input("직급", key="signup_position", placeholder="예: 팀장, 과장, 대리")
-                new_pw = st.text_input("비밀번호 (Password)", type="password", key="signup_pw")
+                new_pos = st.text_input("직급", key="signup_position", placeholder="예: 팀장, 과장")
+                new_pw = st.text_input("비밀번호", type="password", key="signup_pw")
                 new_pw_confirm = st.text_input("비밀번호 확인", type="password", key="signup_pw_confirm")
                 
-                signup_submit = st.form_submit_button("회원가입 신청")
-                
-                if signup_submit:
-                    if not new_id or not new_name or not new_position or not new_pw:
-                        st.warning("모든 필드(사번, 이름, 직급, 비밀번호)를 입력해 주세요.")
+                if st.form_submit_button("회원가입 신청"):
+                    if not all([new_id, new_name, new_pos, new_pw]):
+                        st.warning("모든 필드를 입력해 주세요.")
                     elif new_id in st.session_state["user_db"]:
-                        st.error("이미 존재하는 사번(ID)입니다.")
+                        st.error("이미 존재하는 사번입니다.")
                     elif new_pw != new_pw_confirm:
                         st.error("비밀번호가 일치하지 않습니다.")
                     else:
                         st.session_state["user_db"][new_id] = {
-                            "pw": new_pw,
-                            "name": new_name,
-                            "position": new_position,
-                            "approved": False,
-                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            "pw": new_pw, "name": new_name, "position": new_pos,
+                            "approved": False, "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         }
-                        st.success("🎉 회원가입 신청이 완료되었습니다! 관리자 승인 후 로그인이 가능합니다.")
-
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+                        st.success("🎉 회원가입 신청 완료! 관리자 승인 후 로그인 가능합니다.")
 
 if not st.session_state["authenticated"]:
     st.sidebar.info("🔒 로그인 후 시스템 이용이 가능합니다.")
     auth_screen()
     st.stop()
 
-
 # ==========================================
-# 📌 [사이드바] 접속자 정보 / 설정 & 관리자 메뉴
+# 📌 [사이드바] 접속자 정보 / 관리자 메뉴
 # ==========================================
 st.sidebar.title("💊 동화약품 수탁 AI")
 
@@ -164,39 +110,29 @@ if st.sidebar.button("🔓 로그아웃", key="logout_btn"):
 
 st.sidebar.markdown("---")
 
-# 👑 [관리자 전용] 회원가입 승인 대시보드
 if curr_user_id == "master":
     st.sidebar.subheader("👑 관리자 메뉴")
     with st.sidebar.expander("🙋‍♂️ 회원가입 승인 관리", expanded=True):
-        pending_users = {
-            uid: uinfo for uid, uinfo in st.session_state["user_db"].items() 
-            if not uinfo.get("approved", False)
-        }
-        
+        pending_users = {uid: uinfo for uid, uinfo in st.session_state["user_db"].items() if not uinfo.get("approved", False)}
         if not pending_users:
-            st.caption("승인 대기 중인 회원가입 신청이 없습니다.")
+            st.caption("승인 대기 건이 없습니다.")
         else:
             st.write(f"**대기건수: {len(pending_users)}건**")
             for p_id, p_info in list(pending_users.items()):
                 st.markdown(f"**- {p_info['name']} {p_info['position']}** (`{p_id}`)")
-                st.caption(f"신청일: {p_info.get('created_at', '-')}")
                 col_app, col_rej = st.columns(2)
-                with col_app:
-                    if st.button("승인", key=f"app_{p_id}", type="primary"):
-                        st.session_state["user_db"][p_id]["approved"] = True
-                        st.success(f"{p_info['name']}님 승인 완료!")
-                        st.rerun()
-                with col_rej:
-                    if st.button("거절", key=f"rej_{p_id}"):
-                        del st.session_state["user_db"][p_id]
-                        st.info(f"{p_info['name']}님 거절 완료.")
-                        st.rerun()
+                if col_app.button("승인", key=f"app_{p_id}", type="primary"):
+                    st.session_state["user_db"][p_id]["approved"] = True
+                    st.rerun()
+                if col_rej.button("거절", key=f"rej_{p_id}"):
+                    del st.session_state["user_db"][p_id]
+                    st.rerun()
 
 api_key = st.secrets.get("GEMINI_API_KEY", "")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 작성자 정보")
-company_name = st.sidebar.text_input("수탁사명", value="동화약품", disabled=True)
+st.sidebar.text_input("수탁사명", value="동화약품", disabled=True)
 user_position = st.sidebar.text_input("직책", value=curr_user_pos)
 user_name = st.sidebar.text_input("작성자 성명", value=curr_user_name)
 
@@ -211,166 +147,123 @@ menu_choice = st.sidebar.radio(
     ]
 )
 
-tab1 = (menu_choice == "📊 수탁공급가 분석 & AI 제안")
-tab2 = (menu_choice == "💰 CSO 수수료율 / 약가 인하 시뮬레이터 (예정)")
-tab3 = (menu_choice == "📁 수탁 품목 계약 및 이력 관리 (예정)")
-tab4 = (menu_choice == "📄 거래처 맞춤형 제안서 PDF (예정)")
-
-# ==========================================
-# 🔝 [상위 메인 헤더]
-# ==========================================
 st.title("💊 동화약품 수탁 AI 자동화 시스템")
+
+# API 호출 공통 헬퍼
+def generate_ai_response(prompt):
+    if not api_key:
+        st.error("Gemini API Key가 설정되지 않았습니다.")
+        return None
+    try:
+        client = genai.Client(api_key=api_key.strip())
+        response = client.models.generate_content(model='gemini-3.6-flash', contents=prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"오류가 발생했습니다: {e}")
+        return None
 
 # ==========================================
 # 🟢 [메뉴 1] 수탁공급가 분석 & AI 제안
 # ==========================================
-if tab1:
-    st.write("제품 기반 포장규격·Batch·포장타입·CSO 자동 시뮬레이션 및 공급단가 분석 시스템 (동화약품 수탁팀 전용)")
-
+if menu_choice == "📊 수탁공급가 분석 & AI 제안":
+    st.write("제품 기반 포장규격·Batch·포장타입·CSO 자동 시뮬레이션 및 공급단가 분석 시스템")
     st.markdown("---")
     
-    # 📝 Step 0. 수탁 품목 기본 정보 입력
     st.subheader("📝 Step 0. 수탁 품목 기본 정보 입력")
-
     c1, c2, c3 = st.columns([2, 1, 1])
-    with c1:
-        item_name = st.text_input(
-            "제품명", 
-            value="", 
-            placeholder="예: 대웅바이오암로디핀정5밀리그램"
-        )
-    with c2:
-        form_type = st.selectbox("제형 구분", ["정제 (T)", "캡슐 (C)"], index=0)
-        unit_symbol = "T" if "정제" in form_type else "C"
-        unit_kor = "정" if "정제" in form_type else "캡슐"
-    with c3:
-        insurance_price = st.number_input(f"보험약가 (원/{unit_kor})", min_value=0, value=312, step=1, format="%d")
+    item_name = c1.text_input("제품명", placeholder="예: 대웅바이오암로디핀정5밀리그램")
+    form_type = c2.selectbox("제형 구분", ["정제 (T)", "캡슐 (C)"], index=0)
+    unit_symbol, unit_kor = ("T", "정") if "정제" in form_type else ("C", "캡슐")
+    insurance_price = c3.number_input(f"보험약가 (원/{unit_kor})", min_value=0, value=312, step=1, format="%d")
 
     c4, c5, c6 = st.columns([2, 1, 1])
-    with c4:
-        batch_size_num = st.number_input(
-            f"기준 배치 사이즈 (Batch Size, {unit_kor})", 
-            min_value=0, 
-            value=1000000, 
-            step=10000, 
-            format="%d"
-        )
-        st.caption(f"💡 현재 배치 사이즈: **{batch_size_num:,}** {unit_kor}")
-    with c5:
-        is_cso = st.checkbox("CSO 대상 품목 여부", value=True)
-    with c6:
-        cso_fee_rate = st.number_input("CSO 수수료율 (%)", min_value=0.0, max_value=100.0, value=40.0, step=0.5)
+    batch_size_num = c4.number_input(f"기준 배치 사이즈 ({unit_kor})", min_value=0, value=1000000, step=10000, format="%d")
+    is_cso = c5.checkbox("CSO 대상 품목 여부", value=True)
+    cso_fee_rate = c6.number_input("CSO 수수료율 (%)", min_value=0.0, max_value=100.0, value=40.0, step=0.5)
 
     st.markdown("---")
-
-    # 📦 포장단위별 원가 및 단가 비교 입력
     st.subheader(f"📦 포장단위별(SKU) 1{unit_kor}당 원가 및 단가 비교 입력")
-
     use_sku3 = st.checkbox("☑️ 규격 3 추가 입력 (3번째 포장 규격이 있는 경우 체크)", value=False)
 
+    # SKU 입력 모듈화 헬퍼
+    def render_sku_input(num, default_type_idx, default_size, default_cost, default_supply, default_ratio):
+        st.markdown(f"#### 🔹 규격 {num} 정보")
+        p_type = st.selectbox("포장 타입", ["PTP", "Bottle (병)"], index=default_type_idx, key=f"sku{num}_type")
+        p_size = st.number_input(f"포장 규격 수치 ({unit_kor}/포장)", min_value=1, value=default_size, step=1, format="%d", key=f"sku{num}_size")
+        name = f"{p_size}{unit_symbol}({p_type.split()[0]})"
+        
+        cost = st.number_input(f"{name} 원가 (원/{unit_kor})", min_value=0, value=default_cost, step=1, format="%d", key=f"sku{num}_cost")
+        supply = st.number_input(f"{name} 공급단가 (원/{unit_kor})", min_value=0, value=default_supply, step=1, format="%d", key=f"sku{num}_supply")
+        ratio = st.number_input(f"{name} 생산 비율 (%)", min_value=0, max_value=100, value=default_ratio, step=5, format="%d", key=f"sku{num}_ratio")
+        
+        prod_qty = int(batch_size_num * (ratio / 100.0))
+        st.metric(f"{name} 생산실적 ({unit_kor})", f"{prod_qty:,} {unit_kor}")
+        return p_type, p_size, name, cost, supply, ratio
+
+    cols = st.columns(3 if use_sku3 else 2)
+    with cols[0]:
+        sku1_type, sku1_size, sku1_name, cost_sku1, supply_sku1, ratio_sku1 = render_sku_input(1, 0, 30, 65, 65, 20 if use_sku3 else 30)
+    with cols[1]:
+        sku2_type, sku2_size, sku2_name, cost_sku2, supply_sku2, ratio_sku2 = render_sku_input(2, 0, 300, 29, 35, 50 if use_sku3 else 70)
+    
     if use_sku3:
-        col_sku1, col_sku2, col_sku3 = st.columns(3)
+        with cols[2]:
+            sku3_type, sku3_size, sku3_name, cost_sku3, supply_sku3, ratio_sku3 = render_sku_input(3, 0, 90, 42, 46, 30)
     else:
-        col_sku1, col_sku2 = st.columns(2)
-
-    # 🔹 규격 1
-    with col_sku1:
-        st.markdown("#### 🔹 규격 1 정보")
-        sku1_type = st.selectbox("포장 타입", ["PTP", "Bottle (병)"], index=0, key="sku1_type")
-        sku1_pack_size = st.number_input(f"포장 규격 수치 ({unit_kor}/포장)", min_value=1, value=30, step=1, format="%d", key="sku1_size")
-        sku1_name = f"{sku1_pack_size}{unit_symbol}({sku1_type.split()[0]})"
-        
-        cost_sku1 = st.number_input(f"{sku1_name} 1{unit_kor}당 원가 (원/{unit_kor})", min_value=0, value=65, step=1, format="%d")
-        supply_sku1 = st.number_input(f"{sku1_name} 1{unit_kor}당 공급단가 (원/{unit_kor})", min_value=0, value=65, step=1, format="%d")
-        
-        default_ratio1 = 30 if not use_sku3 else 20
-        ratio_sku1 = st.number_input(f"{sku1_name} 생산 비율 (%)", min_value=0, max_value=100, value=default_ratio1, step=5, format="%d")
-        prod_sku1_qty = int(batch_size_num * (ratio_sku1 / 100.0))
-        st.metric(f"{sku1_name} 생산실적 ({unit_kor})", f"{prod_sku1_qty:,} {unit_kor}")
-
-    # 🔹 규격 2
-    with col_sku2:
-        st.markdown("#### 🔹 규격 2 정보")
-        sku2_type = st.selectbox("포장 타입", ["Bottle (병)", "PTP"], index=0, key="sku2_type")
-        sku2_pack_size = st.number_input(f"포장 규격 수치 ({unit_kor}/포장)", min_value=1, value=300, step=1, format="%d", key="sku2_size")
-        sku2_name = f"{sku2_pack_size}{unit_symbol}({sku2_type.split()[0]})"
-        
-        cost_sku2 = st.number_input(f"{sku2_name} 1{unit_kor}당 원가 (원/{unit_kor})", min_value=0, value=29, step=1, format="%d")
-        supply_sku2 = st.number_input(f"{sku2_name} 1{unit_kor}당 공급단가 (원/{unit_kor})", min_value=0, value=35, step=1, format="%d")
-        
-        default_ratio2 = 70 if not use_sku3 else 50
-        ratio_sku2 = st.number_input(f"{sku2_name} 생산 비율 (%)", min_value=0, max_value=100, value=default_ratio2, step=5, format="%d")
-        prod_sku2_qty = int(batch_size_num * (ratio_sku2 / 100.0))
-        st.metric(f"{sku2_name} 생산실적 ({unit_kor})", f"{prod_sku2_qty:,} {unit_kor}")
-
-    # 🔹 규격 3
-    if use_sku3:
-        with col_sku3:
-            st.markdown("#### 🔹 규격 3 정보")
-            sku3_type = st.selectbox("포장 타입", ["Bottle (병)", "PTP"], index=0, key="sku3_type")
-            sku3_pack_size = st.number_input(f"포장 규격 수치 ({unit_kor}/포장)", min_value=1, value=90, step=1, format="%d", key="sku3_size")
-            sku3_name = f"{sku3_pack_size}{unit_symbol}({sku3_type.split()[0]})"
-            
-            cost_sku3 = st.number_input(f"{sku3_name} 1{unit_kor}당 원가 (원/{unit_kor})", min_value=0, value=42, step=1, format="%d")
-            supply_sku3 = st.number_input(f"{sku3_name} 1{unit_kor}당 공급단가 (원/{unit_kor})", min_value=0, value=46, step=1, format="%d")
-            
-            ratio_sku3 = st.number_input(f"{sku3_name} 생산 비율 (%)", min_value=0, max_value=100, value=30, step=5, format="%d")
-            prod_sku3_qty = int(batch_size_num * (ratio_sku3 / 100.0))
-            st.metric(f"{sku3_name} 생산실적 ({unit_kor})", f"{prod_sku3_qty:,} {unit_kor}")
-    else:
-        cost_sku3, supply_sku3, ratio_sku3, sku3_pack_size, sku3_name = 0, 0, 0, 0, ""
+        cost_sku3 = supply_sku3 = ratio_sku3 = sku3_size = 0
+        sku3_name = ""
 
     total_ratio = ratio_sku1 + ratio_sku2 + ratio_sku3
     if total_ratio != 100:
         st.warning(f"⚠️ 현재 생산 비율 합계가 **{total_ratio}%** 입니다. (100%가 되도록 조정해 주세요)")
 
-    weighted_avg_cost_per_unit = int(round((cost_sku1 * (ratio_sku1 / 100.0)) + (cost_sku2 * (ratio_sku2 / 100.0)) + (cost_sku3 * (ratio_sku3 / 100.0))))
-    weighted_avg_supply_per_unit = int(round((supply_sku1 * (ratio_sku1 / 100.0)) + (supply_sku2 * (ratio_sku2 / 100.0)) + (supply_sku3 * (ratio_sku3 / 100.0))))
+    # 가중평균 산출
+    r1_f, r2_f, r3_f = ratio_sku1 / 100.0, ratio_sku2 / 100.0, ratio_sku3 / 100.0
+    weighted_avg_cost_per_unit = int(round((cost_sku1 * r1_f) + (cost_sku2 * r2_f) + (cost_sku3 * r3_f)))
+    weighted_avg_supply_per_unit = int(round((supply_sku1 * r1_f) + (supply_sku2 * r2_f) + (supply_sku3 * r3_f)))
 
     cmo_profit_per_unit = weighted_avg_supply_per_unit - weighted_avg_cost_per_unit
     cmo_profit_margin_rate = round((cmo_profit_per_unit / weighted_avg_supply_per_unit) * 100, 1) if weighted_avg_supply_per_unit > 0 else 0.0
 
-    st.info(f"⚖️ **[생산량 가중평균 통합 1{unit_kor}당 단가 및 수탁사 이익]**  \n- **가중평균 1{unit_kor}당 원가**: `{weighted_avg_cost_per_unit:,} 원` &nbsp;&nbsp;|&nbsp;&nbsp; - **가중평균 1{unit_kor}당 공급단가**: `{weighted_avg_supply_per_unit:,} 원`  \n- 💰 **동화약품 매출이익**: `{cmo_profit_per_unit:,} 원/정` &nbsp;&nbsp;|&nbsp;&nbsp; - 📈 **동화약품 매출이익률**: **`{cmo_profit_margin_rate:.1f}%`**")
+    st.info(f"⚖️ **[생산량 가중평균 통합 1{unit_kor}당 단가 및 수탁사 이익]**\n- **가중평균 1{unit_kor}당 원가**: `{weighted_avg_cost_per_unit:,} 원` | **공급단가**: `{weighted_avg_supply_per_unit:,} 원`  \n- 💰 **동화약품 매출이익**: `{cmo_profit_per_unit:,} 원/정` | 📈 **매출이익률**: **`{cmo_profit_margin_rate:.1f}%`**")
 
     st.markdown("---")
     st.subheader("📐 기준 Batch Size 기반 포장 공정 및 단가 절감 시뮬레이션")
 
-    opt_ratio_sku1 = max(0, ratio_sku1 - 10)
-    opt_ratio_sku2 = min(100, ratio_sku2 + 10)
+    opt_ratio_sku1, opt_ratio_sku2 = max(0, ratio_sku1 - 10), min(100, ratio_sku2 + 10)
     opt_ratio_sku3 = ratio_sku3 if use_sku3 else 0
 
-    curr_bottles_sku1 = int(round((batch_size_num * (ratio_sku1 / 100.0)) / sku1_pack_size)) if sku1_pack_size > 0 else 0
-    curr_bottles_sku2 = int(round((batch_size_num * (ratio_sku2 / 100.0)) / sku2_pack_size)) if sku2_pack_size > 0 else 0
-    curr_bottles_sku3 = int(round((batch_size_num * (ratio_sku3 / 100.0)) / sku3_pack_size)) if (use_sku3 and sku3_pack_size > 0) else 0
-    total_curr_bottles = curr_bottles_sku1 + curr_bottles_sku2 + curr_bottles_sku3
+    curr_b1 = int(round((batch_size_num * r1_f) / sku1_size)) if sku1_size > 0 else 0
+    curr_b2 = int(round((batch_size_num * r2_f) / sku2_size)) if sku2_size > 0 else 0
+    curr_b3 = int(round((batch_size_num * r3_f) / sku3_size)) if (use_sku3 and sku3_size > 0) else 0
+    total_curr_bottles = curr_b1 + curr_b2 + curr_b3
 
-    opt_bottles_sku1 = int(round((batch_size_num * (opt_ratio_sku1 / 100.0)) / sku1_pack_size)) if sku1_pack_size > 0 else 0
-    opt_bottles_sku2 = int(round((batch_size_num * (opt_ratio_sku2 / 100.0)) / sku2_pack_size)) if sku2_pack_size > 0 else 0
-    opt_bottles_sku3 = int(round((batch_size_num * (opt_ratio_sku3 / 100.0)) / sku3_pack_size)) if (use_sku3 and sku3_pack_size > 0) else 0
-    total_opt_bottles = opt_bottles_sku1 + opt_bottles_sku2 + opt_bottles_sku3
+    opt_r1_f, opt_r2_f, opt_r3_f = opt_ratio_sku1 / 100.0, opt_ratio_sku2 / 100.0, opt_ratio_sku3 / 100.0
+    opt_b1 = int(round((batch_size_num * opt_r1_f) / sku1_size)) if sku1_size > 0 else 0
+    opt_b2 = int(round((batch_size_num * opt_r2_f) / sku2_size)) if sku2_size > 0 else 0
+    opt_b3 = int(round((batch_size_num * opt_r3_f) / sku3_size)) if (use_sku3 and sku3_size > 0) else 0
+    total_opt_bottles = opt_b1 + opt_b2 + opt_b3
 
     saved_bottles = total_curr_bottles - total_opt_bottles
-
-    opt_weighted_supply = int(round((supply_sku1 * (opt_ratio_sku1 / 100.0)) + (supply_sku2 * (opt_ratio_sku2 / 100.0)) + (supply_sku3 * (opt_ratio_sku3 / 100.0))))
-    opt_weighted_cost = int(round((cost_sku1 * (opt_ratio_sku1 / 100.0)) + (cost_sku2 * (opt_ratio_sku2 / 100.0)) + (cost_sku3 * (opt_ratio_sku3 / 100.0))))
+    opt_weighted_supply = int(round((supply_sku1 * opt_r1_f) + (supply_sku2 * opt_r2_f) + (supply_sku3 * opt_r3_f)))
+    opt_weighted_cost = int(round((cost_sku1 * opt_r1_f) + (cost_sku2 * opt_r2_f) + (cost_sku3 * opt_r3_f)))
     saved_per_unit = weighted_avg_supply_per_unit - opt_weighted_supply
 
-    col_ratio_a, col_ratio_b = st.columns([1, 1])
-
+    col_ratio_a, col_ratio_b = st.columns(2)
     sku_ratio_label_curr = f"{ratio_sku1}% : {ratio_sku2}%" if not use_sku3 else f"{ratio_sku1}% : {ratio_sku2}% : {ratio_sku3}%"
     sku_ratio_label_opt = f"{opt_ratio_sku1}% : {opt_ratio_sku2}%" if not use_sku3 else f"{opt_ratio_sku1}% : {opt_ratio_sku2}% : {opt_ratio_sku3}%"
     sku_names_label = f"{sku1_name} : {sku2_name}" if not use_sku3 else f"{sku1_name} : {sku2_name} : {sku3_name}"
 
     with col_ratio_a:
         st.markdown(f"##### 📌 **1 Batch({batch_size_num:,}{unit_kor}) 생산 시 포장 단위 수량 비교**")
-        sku3_curr_txt = f" / `{sku3_name}`: `{curr_bottles_sku3:,} 개`" if use_sku3 else ""
-        sku3_opt_txt = f" / `{sku3_name}`: `{opt_bottles_sku3:,} 개`" if use_sku3 else ""
+        sku3_curr_txt = f" / `{sku3_name}`: `{curr_b3:,} 개`" if use_sku3 else ""
+        sku3_opt_txt = f" / `{sku3_name}`: `{opt_b3:,} 개`" if use_sku3 else ""
         st.markdown(f"""
         - **현행 비율 ({sku_ratio_label_curr}) 기준**:
-          - `{sku1_name}`: `{curr_bottles_sku1:,} 개` / `{sku2_name}`: `{curr_bottles_sku2:,} 개`{sku3_curr_txt}
+          - `{sku1_name}`: `{curr_b1:,} 개` / `{sku2_name}`: `{curr_b2:,} 개`{sku3_curr_txt}
           - **총 포장 단위 수**: **`{total_curr_bottles:,} 개`**
         - **추천 비율 ({sku_ratio_label_opt}) 적용 시**:
-          - `{sku1_name}`: `{opt_bottles_sku1:,} 개` / `{sku2_name}`: `{opt_bottles_sku2:,} 개`{sku3_opt_txt}
+          - `{sku1_name}`: `{opt_b1:,} 개` / `{sku2_name}`: `{opt_b2:,} 개`{sku3_opt_txt}
           - **총 포장 단위 수**: **`{total_opt_bottles:,} 개`** (총 **`{saved_bottles:,} 개`** 포장 공정 감소!)
         """)
 
@@ -397,50 +290,38 @@ if tab1:
 
     if insurance_price > 0:
         col_sim1, col_sim2 = st.columns(2)
-        with col_sim1:
-            st.markdown("##### 📌 **CSO 구조 분석 요약**")
-            st.markdown(f"""
-            | 항목 | 금액 | 비고 |
-            | :--- | :---: | :--- |
-            | **보험약가** | `{insurance_price:,}원` | 기준 약가 |
-            | **-VAT 제외가** | `{vat_ex_price:,}원` | 1.1 환산 |
-            | **전산매출 (89%)** | `{wholesale_price_ex_vat:,}원` | 도매할인 11% 적용 |
-            | **CSO 수수료 ({cso_fee_rate:.0f}%)** | `{cso_fee_ex_vat:,}원` | VAT 제외 |
-            """)
-
-        with col_sim2:
-            st.markdown("##### 📌 **위탁사 공헌이익 (현재 입력값 기준)**")
-            st.markdown(f"""
-            | 구분 | 현재 (Current) |
-            | :--- | :---: |
-            | **공급단가** | `{weighted_avg_supply_per_unit:,}원` |
-            | **공헌이익** | `{margin_current:,}원` |
-            | **공헌이익률** | **`{margin_rate_current:.1f}%`** |
-            """)
+        col_sim1.markdown(f"""
+        ##### 📌 **CSO 구조 분석 요약**
+        | 항목 | 금액 | 비고 |
+        | :--- | :---: | :--- |
+        | **보험약가** | `{insurance_price:,}원` | 기준 약가 |
+        | **-VAT 제외가** | `{vat_ex_price:,}원` | 1.1 환산 |
+        | **전산매출 (89%)** | `{wholesale_price_ex_vat:,}원` | 도매할인 11% 적용 |
+        | **CSO 수수료 ({cso_fee_rate:.0f}%)** | `{cso_fee_ex_vat:,}원` | VAT 제외 |
+        """)
+        col_sim2.markdown(f"""
+        ##### 📌 **위탁사 공헌이익 (현재 입력값 기준)**
+        | 구분 | 현재 (Current) |
+        | :--- | :---: |
+        | **공급단가** | `{weighted_avg_supply_per_unit:,}원` |
+        | **공헌이익** | `{margin_current:,}원` |
+        | **공헌이익률** | **`{margin_rate_current:.1f}%`** |
+        """)
 
     st.markdown("---")
     st.subheader("💡 Step 1. AI 인상 전략 옵션 제안 생성")
 
     if st.button("🤖 AI 인상 전략 옵션 3가지 도출하기", type="primary"):
-        if not api_key:
-            st.error("Gemini API Key가 설정되지 않았습니다.")
-        elif not item_name:
+        if not item_name:
             st.warning("제품명을 입력해 주세요!")
         else:
-            client = genai.Client(api_key=api_key.strip())
-
-            sku_details_prompt = f"""- 규격 1({sku1_name}): 원가 {cost_sku1:,}원 / 현공급가 {supply_sku1:,}원 (생산비율 {ratio_sku1}%)
-- 규격 2({sku2_name}): 원가 {cost_sku2:,}원 / 현공급가 {supply_sku2:,}원 (생산비율 {ratio_sku2}%)"""
+            sku_details_prompt = f"- 규격 1({sku1_name}): 원가 {cost_sku1:,}원 / 현공급가 {supply_sku1:,}원 (생산비율 {ratio_sku1}%)\n- 규격 2({sku2_name}): 원가 {cost_sku2:,}원 / 현공급가 {supply_sku2:,}원 (생산비율 {ratio_sku2}%)"
             if use_sku3:
                 sku_details_prompt += f"\n- 규격 3({sku3_name}): 원가 {cost_sku3:,}원 / 현공급가 {supply_sku3:,}원 (생산비율 {ratio_sku3}%)"
 
             prompt_options = f"""
             당신은 동화약품 수탁(CMO)영업팀의 최고의 수석 전략 컨설턴트입니다.
-            아래에 명시된 포장 규격({2 if not use_sku3 else 3}개 SKU)의 원가 및 단가 현황과 기준 배치 사이즈({batch_size_num:,}{unit_kor}) 기반 생산 비율(Mix) 조절 근거를 종합 분석하여 거래처(위탁사)와 협상할 수 있는 **3가지 전략적 인상 옵션 안**을 작성해 주세요.
-
-            ⚠️ **[필수 준수 사항]**
-            1. 아래 [제품 및 포장 현황]에 명시된 포장 규격만 사용하여 전략을 제안하세요. 명시되지 않은 포장 규격(예: 존재하지 않는 용량이나 제형)을 절대로 임의로 언급하거나 제안하지 마세요.
-            2. 각 제안은 명확한 원가 설정 및 수탁사/위탁사 손익 근거에 기초해야 합니다.
+            포장 규격({3 if use_sku3 else 2}개 SKU)의 원가 및 단가 현황과 기준 배치 사이즈({batch_size_num:,}{unit_kor}) 기반 생산 비율 조절 근거를 종합 분석하여 전략적 인상 옵션 안 3가지를 작성해 주세요.
 
             [제품 및 포장 현황]
             - 제품명: {item_name} ({form_type})
@@ -456,142 +337,69 @@ if tab1:
             ■ 옵션 B [가중평균 원가 보전안]
             ■ 옵션 C [상호 타협/슬라이딩 단계 적용안]
             """
-
             with st.spinner("AI가 최적의 인상 전략 옵션 3가지를 도출 중입니다..."):
-                try:
-                    # 🔧 최신 정식 모델 'gemini-3.6-flash' 적용
-                    response = client.models.generate_content(
-                        model='gemini-3.6-flash',
-                        contents=prompt_options,
-                    )
-                    st.session_state['ai_options_text'] = response.text
-                except Exception as e:
-                    st.error(f"오류가 발생했습니다: {e}")
+                res_text = generate_ai_response(prompt_options)
+                if res_text:
+                    st.session_state['ai_options_text'] = res_text
 
     if 'ai_options_text' in st.session_state:
         st.markdown("### 📋 도출된 AI 제안 옵션 분석")
         st.info(st.session_state['ai_options_text'])
-
-        st.markdown("### 📊 옵션별 Before vs After (현행 vs 인상안) 비교표")
+        st.markdown("### 📊 옵션별 Before vs After 비교표")
         
-        s1_a = int(round(supply_sku1 * 1.10))
-        s2_a = supply_sku2
-        s3_a = supply_sku3 if use_sku3 else 0
-        avg_s_a = int(round((s1_a * (opt_ratio_sku1/100)) + (s2_a * (opt_ratio_sku2/100)) + (s3_a * (opt_ratio_sku3/100))))
-        profit_a = avg_s_a - opt_weighted_cost
-        margin_a = round((profit_a / avg_s_a) * 100, 1) if avg_s_a > 0 else 0
+        # 옵션별 스펙 계산
+        s1_a, s2_a, s3_a = int(round(supply_sku1 * 1.10)), supply_sku2, (supply_sku3 if use_sku3 else 0)
+        avg_s_a = int(round((s1_a * opt_r1_f) + (s2_a * opt_r2_f) + (s3_a * opt_r3_f)))
+        margin_a = round(((avg_s_a - opt_weighted_cost) / avg_s_a) * 100, 1) if avg_s_a > 0 else 0
         client_margin_a = round(((wholesale_price_ex_vat - cso_fee_ex_vat - avg_s_a) / wholesale_price_ex_vat) * 100, 1) if wholesale_price_ex_vat > 0 else 0
 
         avg_s_b = int(round(weighted_avg_cost_per_unit * 1.12))
-        profit_b = avg_s_b - weighted_avg_cost_per_unit
-        margin_b = round((profit_b / avg_s_b) * 100, 1) if avg_s_b > 0 else 0
+        margin_b = round(((avg_s_b - weighted_avg_cost_per_unit) / avg_s_b) * 100, 1) if avg_s_b > 0 else 0
         client_margin_b = round(((wholesale_price_ex_vat - cso_fee_ex_vat - avg_s_b) / wholesale_price_ex_vat) * 100, 1) if wholesale_price_ex_vat > 0 else 0
 
         avg_s_c = int(round(weighted_avg_supply_per_unit + ((avg_s_b - weighted_avg_supply_per_unit) * 0.5)))
-        profit_c = avg_s_c - weighted_avg_cost_per_unit
-        margin_c = round((profit_c / avg_s_c) * 100, 1) if avg_s_c > 0 else 0
+        margin_c = round(((avg_s_c - weighted_avg_cost_per_unit) / avg_s_c) * 100, 1) if avg_s_c > 0 else 0
         client_margin_c = round(((wholesale_price_ex_vat - cso_fee_ex_vat - avg_s_c) / wholesale_price_ex_vat) * 100, 1) if wholesale_price_ex_vat > 0 else 0
 
-        comparison_data = {
+        df_comp = pd.DataFrame({
             "구분": ["생산 비율 Mix", "1 Batch 포장 단위", "가중평균 공급단가", "가중평균 원가", "동화약품 매출이익률", "위탁사 공헌이익률"],
-            "현행 (Before)": [
-                f"{sku_ratio_label_curr}",
-                f"{total_curr_bottles:,}개",
-                f"{weighted_avg_supply_per_unit:,}원",
-                f"{weighted_avg_cost_per_unit:,}원",
-                f"{cmo_profit_margin_rate:.1f}%",
-                f"{margin_rate_current:.1f}%"
-            ],
-            "옵션 A (비율전환 유도안)": [
-                f"{sku_ratio_label_opt}",
-                f"{total_opt_bottles:,}개 ({saved_bottles:-,}개)",
-                f"{avg_s_a:,}원 ({avg_s_a - weighted_avg_supply_per_unit:+}원)",
-                f"{opt_weighted_cost:,}원",
-                f"{margin_a:.1f}% ({round(margin_a - cmo_profit_margin_rate, 1):+}%p)",
-                f"{client_margin_a:.1f}% ({round(client_margin_a - margin_rate_current, 1):+}%p)"
-            ],
-            "옵션 B (원가 보전안)": [
-                f"{sku_ratio_label_curr}",
-                f"{total_curr_bottles:,}개",
-                f"{avg_s_b:,}원 ({avg_s_b - weighted_avg_supply_per_unit:+}원)",
-                f"{weighted_avg_cost_per_unit:,}원",
-                f"{margin_b:.1f}% ({round(margin_b - cmo_profit_margin_rate, 1):+}%p)",
-                f"{client_margin_b:.1f}% ({round(client_margin_b - margin_rate_current, 1):+}%p)"
-            ],
-            "옵션 C (슬라이딩 적용안)": [
-                f"{sku_ratio_label_curr}",
-                f"{total_curr_bottles:,}개",
-                f"{avg_s_c:,}원 ({avg_s_c - weighted_avg_supply_per_unit:+}원)",
-                f"{weighted_avg_cost_per_unit:,}원",
-                f"{margin_c:.1f}% ({round(margin_c - cmo_profit_margin_rate, 1):+}%p)",
-                f"{client_margin_c:.1f}% ({round(client_margin_c - margin_rate_current, 1):+}%p)"
-            ]
-        }
-
-        df_comp = pd.DataFrame(comparison_data)
+            "현행 (Before)": [sku_ratio_label_curr, f"{total_curr_bottles:,}개", f"{weighted_avg_supply_per_unit:,}원", f"{weighted_avg_cost_per_unit:,}원", f"{cmo_profit_margin_rate:.1f}%", f"{margin_rate_current:.1f}%"],
+            "옵션 A (비율전환)": [sku_ratio_label_opt, f"{total_opt_bottles:,}개 ({saved_bottles:-,}개)", f"{avg_s_a:,}원 ({avg_s_a - weighted_avg_supply_per_unit:+}원)", f"{opt_weighted_cost:,}원", f"{margin_a:.1f}% ({round(margin_a - cmo_profit_margin_rate, 1):+}%p)", f"{client_margin_a:.1f}% ({round(client_margin_a - margin_rate_current, 1):+}%p)"],
+            "옵션 B (원가보전)": [sku_ratio_label_curr, f"{total_curr_bottles:,}개", f"{avg_s_b:,}원 ({avg_s_b - weighted_avg_supply_per_unit:+}원)", f"{weighted_avg_cost_per_unit:,}원", f"{margin_b:.1f}% ({round(margin_b - cmo_profit_margin_rate, 1):+}%p)", f"{client_margin_b:.1f}% ({round(client_margin_b - margin_rate_current, 1):+}%p)"],
+            "옵션 C (슬라이딩)": [sku_ratio_label_curr, f"{total_curr_bottles:,}개", f"{avg_s_c:,}원 ({avg_s_c - weighted_avg_supply_per_unit:+}원)", f"{weighted_avg_cost_per_unit:,}원", f"{margin_c:.1f}% ({round(margin_c - cmo_profit_margin_rate, 1):+}%p)", f"{client_margin_c:.1f}% ({round(client_margin_c - margin_rate_current, 1):+}%p)"]
+        })
         st.table(df_comp)
 
         st.markdown("---")
         st.subheader("✉️ Step 2. 전략 옵션 선택 및 메일 제안서 작성")
-        
-        selected_option = st.radio(
-            "거래처에 제안할 최종 옵션을 선택하세요:",
-            ["옵션 A (대용량/주력규격 비율 전환 유도안)", "옵션 B (가중평균 원가 보전안)", "옵션 C (상호 타협/슬라이딩 단계 적용안)"]
-        )
+        selected_option = st.radio("거래처에 제안할 최종 옵션을 선택하세요:", ["옵션 A (대용량/주력규격 비율 전환 유도안)", "옵션 B (가중평균 원가 보전안)", "옵션 C (상호 타협/슬라이딩 단계 적용안)"])
 
         if st.button("📧 선택된 옵션으로 메일 제안서 생성하기"):
-            client = genai.Client(api_key=api_key.strip())
-
-            sku_summary_txt = f"{sku1_name} {supply_sku1:,}원 / {sku2_name} {supply_sku2:,}원"
-            if use_sku3:
-                sku_summary_txt += f" / {sku3_name} {supply_sku3:,}원"
-
+            sku_summary_txt = f"{sku1_name} {supply_sku1:,}원 / {sku2_name} {supply_sku2:,}원" + (f" / {sku3_name} {supply_sku3:,}원" if use_sku3 else "")
             prompt_email = f"""
-            당신은 동화약품 수탁팀 담당자입니다.
-            위탁사 담당자에게 보낼 **수탁 공급단가 조정 및 포장 비율 최적화 협의 메일 제안서**를 작성해 주세요.
+            당신은 동화약품 수탁팀 담당자입니다. 위탁사 담당자에게 보낼 메일 제안서를 작성해 주세요.
+            선택된 옵션: [{selected_option}]
             
-            [작성 조건]
-            1. 모든 원화 금액은 소수점 없는 정수(예: 312원, 63원)로 작성하세요.
-            2. 담당자가 선택한 **[{selected_option}]**의 핵심 제안 내용이 비중 있게 반영되도록 작성하세요.
-            3. 상기 입력된 포장 규격({sku_names_label}) 이외의 미입력 규격은 절대로 본문에 포함하지 마세요.
-            4. 비즈니스 예의를 갖추되, 정중하고 논리적인 개조식 워딩을 사용하세요.
-            5. 메일 제목, 수신/발신, 본문(1. 배경, 2. 제안 내용 및 비율 조절 효과, 3. Expectation/기대효과) 구조로 작성하세요.
-
             [기본 정보]
             - 수탁사: 동화약품 수탁팀 {user_position} {user_name}
             - 품목명: {item_name}
             - 약가: {insurance_price:,}원
-            - 기준 배치 사이즈: {batch_size_num:,}{unit_kor} (현행 포장 단위 수량: {total_curr_bottles:,}개)
+            - 배치 사이즈: {batch_size_num:,}{unit_kor} (현행 포장 단위 수량: {total_curr_bottles:,}개)
             - 현행 단가: {sku_summary_txt} (가중평균 {weighted_avg_supply_per_unit:,}원)
             - 가중평균 원가: {weighted_avg_cost_per_unit:,}원
             - AI 분석 옵션 전문:
             {st.session_state['ai_options_text']}
             """
-
-            with st.spinner("선택하신 옵션으로 거래처 제출용 메일 제안서를 작성 중입니다..."):
-                try:
-                    # 🔧 최신 정식 모델 'gemini-3.6-flash' 적용
-                    response_email = client.models.generate_content(
-                        model='gemini-3.6-flash',
-                        contents=prompt_email,
-                    )
+            with st.spinner("거래처 제출용 메일 Draft 생성 중..."):
+                email_text = generate_ai_response(prompt_email)
+                if email_text:
                     st.markdown("---")
                     st.markdown(f"### ✉️ [{selected_option}] 기반 거래처 제안 메일 Draft")
-                    st.write(response_email.text)
-                except Exception as e:
-                    st.error(f"메일 생성 중 오류가 발생했습니다: {e}")
+                    st.write(email_text)
 
 # ==========================================
-# 🟡 [메뉴 2~4] (업데이트 예정 기능들)
+# 🟡 [메뉴 2~4] (예정 기능)
 # ==========================================
-if tab2:
-    st.subheader("💰 CSO 수수료율 및 약가 인하 반응 시뮬레이터")
-    st.info("🚧 **업데이트 예정 기능입니다.**")
-
-if tab3:
-    st.subheader("📁 수탁 품목 계약 및 협상 이력 대시보드")
-    st.info("🚧 **업데이트 예정 기능입니다.**")
-
-if tab4:
-    st.subheader("📄 AI 거래처 맞춤형 제안서 PDF 추출")
+else:
+    st.subheader(menu_choice)
     st.info("🚧 **업데이트 예정 기능입니다.**")
