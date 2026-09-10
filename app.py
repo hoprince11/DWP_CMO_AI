@@ -11,18 +11,17 @@ st.set_page_config(
 )
 
 # ------------------------------------------
-# 🎨 [UI] 사이드바 토글 버튼 강제 노출 (강력 보강 버전)
+# 🎨 [UI] 헤더 영역 파괴 없이 토글 버튼 완벽 유지 + 우측 요소만 정밀 제거
 # ------------------------------------------
 hide_streamlit_style = """
     <style>
-    /* 1. 상단 헤더 컨테이너 레이어 및 마우스 클릭 허용 */
+    /* 1. 상단 헤더 전체 레이어 유지 (사이드바 버튼 클릭 가능하도록 설정) */
     header[data-testid="stHeader"] {
         background-color: transparent !important;
-        z-index: 999990 !important;
-        pointer-events: auto !important;
+        z-index: 99990 !important;
     }
-    
-    /* 2. 사이드바 열기/닫기 토글 버튼 최상단 강제 표시 */
+
+    /* 2. 사이드바 열기/닫기 버튼 강제 보존 */
     [data-testid="stSidebarCollapseButton"],
     [data-testid="stSidebarExpandButton"],
     button[aria-label="Toggle sidebar"],
@@ -31,19 +30,19 @@ hide_streamlit_style = """
         display: flex !important;
         visibility: visible !important;
         opacity: 1 !important;
-        pointer-events: auto !important;
-        z-index: 999999 !important;
-        position: relative !important;
+        z-index: 99999 !important;
     }
 
-    /* 3. 우측 상단 툴바 항목(Share, GitHub, Edit 등)만 타겟팅하여 제거 */
+    /* 3. 우측 상단 아이콘/버튼들만 선택적으로 정밀 숨김 (토글 버튼 영향 X) */
     [data-testid="stHeaderActionElements"],
-    [data-testid="stToolbar"] > div:not(:first-child) {
+    [data-testid="stToolbarActions"],
+    button[title="View app in GitHub"],
+    button[title="Share this app"] {
         display: none !important;
         visibility: hidden !important;
     }
-    
-    /* 4. 우측 하단 Manage app 버튼 및 푸터/배지 숨김 */
+
+    /* 4. 우측 하단 Manage app 버튼 및 푸터 숨김 */
     div[data-testid="stStatusWidget"],
     button[title="Manage app"],
     #MainMenu,
