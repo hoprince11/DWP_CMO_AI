@@ -50,7 +50,7 @@ def auth_screen():
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.title("🔒 동화약품 수탁 AI 자동화 시스템")
+        st.title("🔒 동화약품 수탁팀 AI 자동화 시스템")
         st.caption("인가된 동화약품 팀원만 접속 가능한 내부 보안 시스템입니다.")
         st.markdown("---")
         
