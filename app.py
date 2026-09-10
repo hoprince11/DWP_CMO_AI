@@ -3,22 +3,23 @@ import pandas as pd
 from datetime import datetime
 from google import genai
 
-st.set_page_config(page_title="동화약품 수탁팀 AI 자동화 시스템", layout="wide")
+# 페이지 설정 (사이드바 기본 펼침)
+st.set_page_config(
+    page_title="동화약품 수탁팀 AI 자동화 시스템", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # ------------------------------------------
-# 🎨 [UI] 상단 헤더 및 툴바 메뉴 숨기기
+# 🎨 [UI] 상단 헤더 및 툴바 깔끔 조정 (사이드바 토글 버튼은 유지)
 # ------------------------------------------
 hide_streamlit_style = """
     <style>
-    /* 상단 우측 메뉴(Share, Edit 등) 숨기기 */
-    .stAppToolbar {display: none !important;}
+    /* 상단 우측 메뉴 및 푸터만 숨기기 (사이드바 토글 버튼 유지) */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     footer {display: none !important;}
-    
-    /* 하단 Streamlit 배지 숨기기 */
     div[data-testid="stViewerBadge"] {display: none !important;}
-    div[class*="viewerBadge"] {display: none !important;}
-    [data-testid="stStatusWidget"] {display: none !important;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -111,7 +112,7 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
-    # 💡 로그인 전에도 사이드바 버튼이 활성화되도록 사이드바에 안내 문구 표시
+    # 로그인 전 안내
     st.sidebar.info("🔒 로그인 후 시스템 이용이 가능합니다.")
     auth_screen()
     st.stop()
@@ -169,13 +170,6 @@ company_name = st.sidebar.text_input("수탁사명", value="동화약품", disab
 user_position = st.sidebar.text_input("직책", value=curr_user_pos)
 user_name = st.sidebar.text_input("작성자 성명", value=curr_user_name)
 
-
-# ==========================================
-# 🔝 [상위 메인 헤더 & 상단 버튼형 메뉴]
-# ==========================================
-st.title("💊 동화약품 수탁 AI 자동화 시스템")
-
-# 📌 왼쪽 사이드바 메뉴 구성
 st.sidebar.markdown("---")
 menu_choice = st.sidebar.radio(
     "📌 메뉴 이동",
@@ -187,17 +181,20 @@ menu_choice = st.sidebar.radio(
     ]
 )
 
-# 기존 tab 변수들을 선택된 메뉴 조건과 연결 (들여쓰기 수정 최소화)
 tab1 = (menu_choice == "📊 수탁공급가 분석 & AI 제안")
 tab2 = (menu_choice == "💰 CSO 수수료율 / 약가 인하 시뮬레이터 (예정)")
 tab3 = (menu_choice == "📁 수탁 품목 계약 및 이력 관리 (예정)")
 tab4 = (menu_choice == "📄 거래처 맞춤형 제안서 PDF (예정)")
 
 # ==========================================
+# 🔝 [상위 메인 헤더]
+# ==========================================
+st.title("💊 동화약품 수탁 AI 자동화 시스템")
+
+# ==========================================
 # 🟢 [메뉴 1] 수탁공급가 분석 & AI 제안
 # ==========================================
 if tab1:
-    
     st.write("제품 기반 포장규격·Batch·포장타입·CSO 자동 시뮬레이션 및 공급단가 분석 시스템 (동화약품 수탁팀 전용)")
 
     st.markdown("---")
@@ -387,7 +384,7 @@ if tab1:
 
     if st.button("🤖 AI 인상 전략 옵션 3가지 도출하기", type="primary"):
         if not api_key:
-            st.error("좌측 사이드바에 Gemini API Key를 입력해 주세요!")
+            st.error("Gemini API Key가 설정되지 않았습니다.")
         elif not item_name:
             st.warning("제품명을 입력해 주세요!")
         else:
@@ -424,12 +421,12 @@ if tab1:
             with st.spinner("AI가 최적의 인상 전략 옵션 3가지를 도출 중입니다..."):
                 try:
                     response = client.models.generate_content(
-                        model='gemini-3.6-flash',
+                        model='gemini-2.5-flash',
                         contents=prompt_options,
                     )
                     st.session_state['ai_options_text'] = response.text
                 except Exception as e:
-                    st.error(f"오류가 발생했습니다. API Key를 확인해 주세요: {e}")
+                    st.error(f"오류가 발생했습니다: {e}")
 
     if 'ai_options_text' in st.session_state:
         st.markdown("### 📋 도출된 AI 제안 옵션 분석")
@@ -534,7 +531,7 @@ if tab1:
             with st.spinner("선택하신 옵션으로 거래처 제출용 메일 제안서를 작성 중입니다..."):
                 try:
                     response_email = client.models.generate_content(
-                        model='gemini-3.6-flash',
+                        model='gemini-2.5-flash',
                         contents=prompt_email,
                     )
                     st.markdown("---")
@@ -544,16 +541,16 @@ if tab1:
                     st.error(f"메일 생성 중 오류가 발생했습니다: {e}")
 
 # ==========================================
-# 🟡 [탭 2~4] (업데이트 예정 기능들)
+# 🟡 [메뉴 2~4] (업데이트 예정 기능들 - if문 적용)
 # ==========================================
-with tab2:
+if tab2:
     st.subheader("💰 CSO 수수료율 및 약가 인하 반응 시뮬레이터")
     st.info("🚧 **업데이트 예정 기능입니다.**")
 
-with tab3:
+if tab3:
     st.subheader("📁 수탁 품목 계약 및 협상 이력 대시보드")
     st.info("🚧 **업데이트 예정 기능입니다.**")
 
-with tab4:
+if tab4:
     st.subheader("📄 AI 거래처 맞춤형 제안서 PDF 추출")
     st.info("🚧 **업데이트 예정 기능입니다.**")
