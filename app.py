@@ -9,15 +9,16 @@ st.set_page_config(page_title="동화약품 수탁팀 AI 자동화 시스템", l
 # ------------------------------------------
 hide_streamlit_style = """
     <style>
+    /* 상단 우측 메뉴(Share, Edit 등) 숨기기 */
+    .stAppToolbar {display: none !important;}
     #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
     footer {visibility: hidden;}
-    .stAppHeader {display: none;}
-    [data-testid="stStatusWidget"] {display: none;}
-    .stAppToolbar {display: none;}
-    #stDecoration {display: none;}
+    footer {display: none !important;}
+    
+    /* 하단 Streamlit 배지 숨기기 */
     div[data-testid="stViewerBadge"] {display: none !important;}
     div[class*="viewerBadge"] {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
