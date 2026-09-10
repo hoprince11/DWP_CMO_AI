@@ -121,7 +121,7 @@ if not st.session_state["authenticated"]:
 # ==========================================
 # 📌 [사이드바] 접속자 정보 / 설정 & 관리자 메뉴
 # ==========================================
-st.sidebar.title("💊 동화약품 수탁팀 AI")
+st.sidebar.title("💊 동화약품 수탁 AI")
 
 curr_user_id = st.session_state['user_id']
 curr_user_name = st.session_state.get('user_name', '')
@@ -189,7 +189,7 @@ tab4 = (menu_choice == "📄 거래처 맞춤형 제안서 PDF (예정)")
 # ==========================================
 # 🔝 [상위 메인 헤더]
 # ==========================================
-st.title("💊 동화약품 수탁팀 AI 자동화 시스템")
+st.title("💊 동화약품 수탁 AI 자동화 시스템")
 
 # ==========================================
 # 🟢 [메뉴 1] 수탁공급가 분석 & AI 제안
@@ -198,13 +198,17 @@ if tab1:
     st.write("제품 기반 포장규격·Batch·포장타입·CSO 자동 시뮬레이션 및 공급단가 분석 시스템 (동화약품 수탁팀 전용)")
 
     st.markdown("---")
+    
+    # 📝 Step 0. 수탁 품목 기본 정보 입력
     st.subheader("📝 Step 0. 수탁 품목 기본 정보 입력")
 
     c1, c2, c3 = st.columns([2, 1, 1])
     with c1:
+        # 수정 1 & 2: '제품명'으로 단순화 + 초기값 빈값 설정 (placeholder 추가)
         item_name = st.text_input(
-            "제품명 / 성분명 (예: 대웅바이오암로디핀정5밀리그램)", 
-            value="대웅바이오암로디핀정5밀리그램"
+            "제품명", 
+            value="", 
+            placeholder="예: 대웅바이오암로디핀정5밀리그램"
         )
     with c2:
         form_type = st.selectbox("제형 구분", ["정제 (T)", "캡슐 (C)"], index=0)
@@ -215,7 +219,14 @@ if tab1:
 
     c4, c5, c6 = st.columns([2, 1, 1])
     with c4:
-        batch_size_num = st.number_input(f"기준 배치 사이즈 (Batch Size, {unit_kor})", min_value=0, value=1000000, step=10000, format="%d")
+        # 수정 3: format="%,d" 적용으로 입력창 내부 1,000,000 콤마 표기
+        batch_size_num = st.number_input(
+            f"기준 배치 사이즈 (Batch Size, {unit_kor})", 
+            min_value=0, 
+            value=1000000, 
+            step=10000, 
+            format="%,d"
+        )
         st.caption(f"💡 현재 배치 사이즈: **{batch_size_num:,}** {unit_kor}")
     with c5:
         is_cso = st.checkbox("CSO 대상 품목 여부", value=True)
@@ -541,7 +552,7 @@ if tab1:
                     st.error(f"메일 생성 중 오류가 발생했습니다: {e}")
 
 # ==========================================
-# 🟡 [메뉴 2~4] (업데이트 예정 기능들 - if문 적용)
+# 🟡 [메뉴 2~4] (업데이트 예정 기능들)
 # ==========================================
 if tab2:
     st.subheader("💰 CSO 수수료율 및 약가 인하 반응 시뮬레이터")
