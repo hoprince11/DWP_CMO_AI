@@ -11,14 +11,26 @@ st.set_page_config(
 )
 
 # ------------------------------------------
-# 🎨 [UI] 상단 헤더 및 툴바 깔끔 조정 (사이드바 토글 버튼은 유지)
+# 🎨 [UI] 우측 상단 툴바 및 하단 Manage app 버튼만 정밀 숨김 (사이드바 토글 유지)
 # ------------------------------------------
 hide_streamlit_style = """
     <style>
-    /* 상단 우측 메뉴 및 푸터만 숨기기 (사이드바 토글 버튼 유지) */
+    /* 우측 상단 툴바 (Share, Edit, GitHub 아이콘 등) 정밀 숨김 */
+    div[data-testid="stToolbar"] {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
+    /* 우측 하단 Manage app 버튼 정밀 숨김 */
+    div[data-testid="stStatusWidget"],
+    button[title="Manage app"] {
+        visibility: hidden !important;
+        display: none !important;
+    }
+
+    /* 하단 푸터 및 기본 배지 숨김 */
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    footer {display: none !important;}
+    footer {visibility: hidden; display: none !important;}
     div[data-testid="stViewerBadge"] {display: none !important;}
     </style>
 """
@@ -204,7 +216,6 @@ if tab1:
 
     c1, c2, c3 = st.columns([2, 1, 1])
     with c1:
-        # 제품명 수정 및 초기값 빈값 설정
         item_name = st.text_input(
             "제품명", 
             value="", 
@@ -219,7 +230,6 @@ if tab1:
 
     c4, c5, c6 = st.columns([2, 1, 1])
     with c4:
-        # 에러 수정: Streamlit number_input에서 지원하는 C-style 포맷 "%d" 적용
         batch_size_num = st.number_input(
             f"기준 배치 사이즈 (Batch Size, {unit_kor})", 
             min_value=0, 
