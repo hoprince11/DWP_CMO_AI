@@ -11,26 +11,39 @@ st.set_page_config(
 )
 
 # ------------------------------------------
-# 🎨 [UI] 우측 상단 툴바 및 하단 Manage app 버튼만 정밀 숨김 (사이드바 토글 유지)
+# 🎨 [UI] 사이드바 토글 버튼 완벽 보존 + 우측 툴바/Manage app 숨김
 # ------------------------------------------
 hide_streamlit_style = """
     <style>
-    /* 우측 상단 툴바 (Share, Edit, GitHub 아이콘 등) 정밀 숨김 */
-    div[data-testid="stToolbar"] {
-        visibility: hidden !important;
-        display: none !important;
-    }
-    
-    /* 우측 하단 Manage app 버튼 정밀 숨김 */
-    div[data-testid="stStatusWidget"],
-    button[title="Manage app"] {
-        visibility: hidden !important;
-        display: none !important;
+    /* 1. 사이드바 열기/닫기 토글 버튼 무조건 강제 표시 */
+    [data-testid="stSidebarCollapseButton"],
+    button[data-testid="baseButton-headerNoPadding"],
+    button[aria-label="Toggle sidebar"],
+    div[data-testid="stSidebarNavSeparator"] {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 999999 !important;
     }
 
-    /* 하단 푸터 및 기본 배지 숨김 */
+    /* 2. 우측 상단 액션 버튼 그룹 (Share, Edit, GitHub 등)만 가리기 */
+    [data-testid="stHeaderActionElements"],
+    .stAppHeader > div:last-child {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* 3. 우측 하단 Manage app 버튼 숨김 */
+    div[data-testid="stStatusWidget"],
+    button[title="Manage app"],
+    .stAppViewBlockContainer + div {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* 4. 푸터 및 배지 숨김 */
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden; display: none !important;}
+    footer {display: none !important;}
     div[data-testid="stViewerBadge"] {display: none !important;}
     </style>
 """
